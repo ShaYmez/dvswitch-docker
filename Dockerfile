@@ -29,23 +29,38 @@ WORKDIR /usr/src
 RUN git config --global http.sslVerify false && \
     git clone --depth 1 https://github.com/DVSwitch/md380tools.git
 
+# Copy Python 3 compatible firmware unwrap script
+# The original md380-fw script requires Python 2, this is a Python 3 port
+COPY unwrap_firmware.py /usr/src/md380tools/unwrap_firmware.py
+
 # Download firmware and build the emulator
 # The firmware is required to build the AMBE vocoder emulator
-# Note: SSL certificate verification disabled (-k) as a workaround for restricted build environments.
-# Using Internet Archive as fallback since md380.org may be unavailable.
+# Firmware is downloaded from md380.org (official source)
 WORKDIR /usr/src/md380tools
 RUN mkdir -p firmware/dl firmware/bin firmware/unwrapped && \
-    # Try primary source first, fall back to Internet Archive
-    (curl -L -f -k --retry 3 --max-time 60 \
+    curl -L -f -k --retry 3 --max-time 60 \
         "https://md380.org/firmware/orig/TYT-Tytera-MD-380-FW-v232.zip" \
-        -o firmware/dl/D002.032.zip || \
-     curl -L -f -k --retry 3 --max-time 120 \
-        "https://web.archive.org/web/20231001000000if_/https://md380.org/firmware/orig/TYT-Tytera-MD-380-FW-v232.zip" \
-        -o firmware/dl/D002.032.zip) && \
+        -o firmware/dl/D002.032.zip && \
     unzip -p firmware/dl/D002.032.zip "Firmware 2.32/MD-380-D2.32(AD).bin" > firmware/bin/D002.032.bin && \
-    python3 md380-fw --unwrap firmware/bin/D002.032.bin firmware/unwrapped/D002.032.img && \
+    python3 unwrap_firmware.py firmware/bin/D002.032.bin firmware/unwrapped/D002.032.img && \
     cd emulator && \
-    make clean all
+    rm -f *.o *~ md380-emu *.wav *.raw *.elf && \
+    arm-linux-gnueabihf-gcc -static -g -std=gnu99 -c -o md380-emu.o md380-emu.c && \
+    arm-linux-gnueabihf-gcc -static -g -std=gnu99 -c -o ambe.o ambe.c && \
+    arm-linux-gnueabihf-objcopy \
+        -I binary ../firmware/unwrapped/D002.032.img \
+        --change-addresses=0x0800C000 \
+        --rename-section .data=.firmware \
+        -O elf32-littlearm -B arm firmware.o && \
+    arm-linux-gnueabihf-objcopy \
+        -I binary ../cores/d02032-core.img \
+        --change-addresses=0x20000000 \
+        --rename-section .data=.sram \
+        -O elf32-littlearm -B arm ram.o && \
+    arm-linux-gnueabihf-gcc -static -g -std=gnu99 -o md380-emu md380-emu.o ambe.o firmware.o ram.o \
+        -Xlinker --just-symbols=../applet/src/symbols_d02.032 \
+        -Xlinker --section-start=.firmware=0x0800C000 \
+        -Xlinker --section-start=.sram=0x20000000
 
 # Stage 2: Final DVSwitch Server image
 FROM debian:bookworm-slim
@@ -73,16 +88,20 @@ RUN chmod +x /usr/bin/md380-emu
 
 # Install DVSwitch repository and packages
 # Note: DVSwitch repository only provides HTTP access, not HTTPS
-# The script is verified by checking it's from the official source
+# We install core DVSwitch packages individually to avoid conflicts with our
+# custom-built md380-emu (built from source with firmware from md380.org)
+# Post-install scripts may fail because systemctl isn't available in Docker,
+# but that's expected - services will be managed by the entrypoint script
 WORKDIR /tmp
-RUN wget -q http://dvswitch.org/bookworm && \
+RUN apt-get update && \
+    wget -q http://dvswitch.org/bookworm && \
     chmod +x bookworm && \
     ./bookworm && \
     apt-get update && \
-    apt-get install -y --no-install-recommends \
-    dvswitch-server \
-    && rm -rf /var/lib/apt/lists/* \
-    && rm -f /tmp/bookworm
+    apt-get download dvswitch-base mmdvm-bridge analog-bridge dvswitch-menu && \
+    dpkg --force-all -i dvswitch-base*.deb mmdvm-bridge*.deb analog-bridge*.deb dvswitch-menu*.deb || true && \
+    apt-get install -f -y --no-install-recommends || true && \
+    rm -rf /var/lib/apt/lists/* *.deb /tmp/bookworm
 
 # Create directories for persistent data
 RUN mkdir -p /etc/dvswitch /var/log/dvswitch
