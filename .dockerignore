@@ -1,0 +1,28 @@
+# Git
+.git
+.gitignore
+
+# Docker
+docker-compose*.yml
+.docker/
+
+# Documentation
+*.md
+!README.md
+
+# GitHub
+.github/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary
+tmp/
+temp/
+*.tmp
+*.log

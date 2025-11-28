@@ -1,0 +1,51 @@
+version: '3.8'
+
+services:
+  dvswitch:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: dvswitch-server:latest
+    container_name: dvswitch-server
+    restart: unless-stopped
+    hostname: dvswitch
+    
+    # Network mode - use host for direct network access (recommended for DVSwitch)
+    # Alternatively, use bridge mode with port mappings
+    network_mode: bridge
+    
+    ports:
+      # MMDVM Bridge UDP ports
+      - "62030:62030/udp"
+      - "62031:62031/udp"
+      - "62032:62032/udp"
+      # USRP ports
+      - "34001:34001/udp"
+      - "32001:32001/udp"
+      # Dashboard web interface (if enabled)
+      - "8080:80"
+    
+    volumes:
+      # Persistent configuration
+      - dvswitch-config:/etc/dvswitch
+      # Persistent logs
+      - dvswitch-logs:/var/log/dvswitch
+      # Optional: Mount local config directory
+      # - ./config:/etc/dvswitch:ro
+    
+    environment:
+      - TZ=UTC
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "pgrep", "-f", "dvswitch"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+volumes:
+  dvswitch-config:
+    driver: local
+  dvswitch-logs:
+    driver: local
