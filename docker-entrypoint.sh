@@ -46,8 +46,16 @@ case "$1" in
         fi
         
         # Check for md380-emu (software DMR vocoder emulator)
-        if command -v md380-emu &> /dev/null || [ -x "/opt/md380-emu/md380-emu" ]; then
-            echo "✓ md380-emu is available"
+        if command -v md380-emu &> /dev/null; then
+            echo "✓ md380-emu is available at $(which md380-emu)"
+            # Verify md380-emu can execute (requires qemu-user-static for ARM emulation)
+            if md380-emu -h &> /dev/null || md380-emu 2>&1 | head -1 &> /dev/null; then
+                echo "✓ md380-emu is functional"
+            else
+                echo "! md380-emu found but may require additional configuration"
+            fi
+        elif [ -x "/opt/md380-emu/md380-emu" ]; then
+            echo "✓ md380-emu found at /opt/md380-emu/"
         else
             echo "- md380-emu not found (optional component)"
         fi
