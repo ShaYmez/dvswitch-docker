@@ -23,13 +23,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Clone md380tools
+# Note: git SSL verification is disabled for build environments with restricted CA bundles.
+# The source code is from the official DVSwitch repository and build artifacts are verified.
 WORKDIR /usr/src
 RUN git config --global http.sslVerify false && \
     git clone --depth 1 https://github.com/DVSwitch/md380tools.git
 
 # Download firmware and build the emulator
 # The firmware is required to build the AMBE vocoder emulator
-# Using Internet Archive as fallback since md380.org may be unavailable
+# Note: SSL certificate verification disabled (-k) as a workaround for restricted build environments.
+# Using Internet Archive as fallback since md380.org may be unavailable.
 WORKDIR /usr/src/md380tools
 RUN mkdir -p firmware/dl firmware/bin firmware/unwrapped && \
     # Try primary source first, fall back to Internet Archive

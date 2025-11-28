@@ -49,7 +49,8 @@ case "$1" in
         if command -v md380-emu &> /dev/null; then
             echo "✓ md380-emu is available at $(which md380-emu)"
             # Verify md380-emu can execute (requires qemu-user-static for ARM emulation)
-            if md380-emu -h &> /dev/null || md380-emu 2>&1 | head -1 &> /dev/null; then
+            # Running md380-emu without arguments shows usage info to stderr
+            if md380-emu 2>&1 | grep -q "Usage"; then
                 echo "✓ md380-emu is functional"
             else
                 echo "! md380-emu found but may require additional configuration"
