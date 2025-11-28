@@ -7,16 +7,26 @@ echo "=========================================="
 echo "DVSwitch Server Docker Container"
 echo "=========================================="
 
-# Check if configuration exists
-if [ ! -d "/etc/dvswitch" ]; then
-    echo "Creating /etc/dvswitch directory..."
-    mkdir -p /etc/dvswitch
+# Check if standard DVSwitch directories exist
+if [ ! -d "/opt/MMDVM_Bridge" ]; then
+    echo "Creating /opt/MMDVM_Bridge directory..."
+    mkdir -p /opt/MMDVM_Bridge
+fi
+
+if [ ! -d "/opt/Analog_Bridge" ]; then
+    echo "Creating /opt/Analog_Bridge directory..."
+    mkdir -p /opt/Analog_Bridge
+fi
+
+if [ ! -d "/opt/Analog_Reflector" ]; then
+    echo "Creating /opt/Analog_Reflector directory..."
+    mkdir -p /opt/Analog_Reflector
 fi
 
 # Check if log directory exists
-if [ ! -d "/var/log/dvswitch" ]; then
-    echo "Creating /var/log/dvswitch directory..."
-    mkdir -p /var/log/dvswitch
+if [ ! -d "/var/log/mmdvm" ]; then
+    echo "Creating /var/log/mmdvm directory..."
+    mkdir -p /var/log/mmdvm
 fi
 
 # If the first argument is dvswitch-server or similar, run the DVSwitch services

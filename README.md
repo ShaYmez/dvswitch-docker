@@ -10,8 +10,9 @@ This repository provides a Docker image for running DVSwitch Server in a contain
 
 ## Features
 
-- Based on Debian Bookworm (slim)
+- Based on Debian Buster (slim)
 - Installs the complete DVSwitch Server package from the official DVSwitch repository
+- Uses standard DVSwitch directories (`/opt/MMDVM_Bridge`, `/opt/Analog_Bridge`, `/opt/Analog_Reflector`)
 - Multi-architecture support (amd64, arm64)
 - Automated builds via GitHub Actions
 - Available on Docker Hub and GitHub Container Registry
@@ -29,8 +30,10 @@ docker run -d \
   -p 62032:62032/udp \
   -p 34001:34001/udp \
   -p 32001:32001/udp \
-  -v dvswitch-config:/etc/dvswitch \
-  -v dvswitch-logs:/var/log/dvswitch \
+  -v mmdvm-bridge:/opt/MMDVM_Bridge \
+  -v analog-bridge:/opt/Analog_Bridge \
+  -v analog-reflector:/opt/Analog_Reflector \
+  -v mmdvm-logs:/var/log/mmdvm \
   shaymez/dvswitch-server:latest
 ```
 
@@ -64,8 +67,10 @@ docker exec -it dvswitch-server /usr/local/dvs/dvs
 
 | Path | Description |
 |------|-------------|
-| `/etc/dvswitch` | DVSwitch configuration files |
-| `/var/log/dvswitch` | DVSwitch log files |
+| `/opt/MMDVM_Bridge` | MMDVM Bridge configuration and data |
+| `/opt/Analog_Bridge` | Analog Bridge configuration and data |
+| `/opt/Analog_Reflector` | Analog Reflector configuration and data |
+| `/var/log/mmdvm` | DVSwitch log files |
 
 ### Ports
 
