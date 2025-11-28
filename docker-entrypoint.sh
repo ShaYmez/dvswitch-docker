@@ -26,13 +26,30 @@ case "$1" in
         
         # Check if DVSwitch management utility is available
         if [ -x "/usr/local/dvs/dvs" ]; then
-            echo "DVSwitch management utility (dvs) is available"
-            echo "You can configure DVSwitch using: docker exec -it <container> /usr/local/dvs/dvs"
+            echo "✓ DVSwitch management utility (dvs) is available"
+            echo "  You can configure DVSwitch using: docker exec -it <container> /usr/local/dvs/dvs"
         fi
         
         # Check for MMDVM_Bridge
-        if command -v MMDVM_Bridge &> /dev/null; then
-            echo "MMDVM_Bridge is available"
+        if [ -x "/opt/MMDVM_Bridge/MMDVM_Bridge" ]; then
+            echo "✓ MMDVM_Bridge is available at /opt/MMDVM_Bridge/"
+        fi
+        
+        # Check for Analog_Bridge
+        if [ -x "/opt/Analog_Bridge/Analog_Bridge" ]; then
+            echo "✓ Analog_Bridge is available at /opt/Analog_Bridge/"
+        fi
+        
+        # Check for dvswitch.sh management script
+        if [ -x "/opt/MMDVM_Bridge/dvswitch.sh" ]; then
+            echo "✓ dvswitch.sh management script is available"
+        fi
+        
+        # Check for md380-emu (software DMR vocoder emulator)
+        if command -v md380-emu &> /dev/null || [ -x "/opt/md380-emu/md380-emu" ]; then
+            echo "✓ md380-emu is available"
+        else
+            echo "- md380-emu not found (optional component)"
         fi
         
         echo ""
