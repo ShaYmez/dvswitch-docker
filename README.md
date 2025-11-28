@@ -88,19 +88,6 @@ docker build -t dvswitch-server:local .
 docker run -d --name dvswitch-test dvswitch-server:local
 ```
 
-## GitHub Actions Setup
-
-To enable automated builds and pushes to Docker Hub, configure the following secrets in your repository:
-
-1. `DOCKERHUB_USERNAME` - Your Docker Hub username
-2. `DOCKERHUB_TOKEN` - Your Docker Hub access token
-
-The workflow will:
-- Build on every push to main/master branches
-- Build on pull requests (without pushing)
-- Create tagged releases when you push version tags (e.g., `v1.0.0`)
-- Rebuild weekly to incorporate the latest DVSwitch updates
-
 ## Image Registries
 
 The Docker image is available from:
