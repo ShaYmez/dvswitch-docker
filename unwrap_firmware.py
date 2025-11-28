@@ -90,17 +90,40 @@ def xor_decrypt(data, key):
 
 def unwrap_md380_firmware(input_file, output_file):
     """Unwrap MD380 firmware from TYT encrypted format."""
+    # MD380 firmware files are typically around 1MB, set reasonable limit
+    MAX_FIRMWARE_SIZE = 10 * 1024 * 1024  # 10MB max
+    
     with open(input_file, 'rb') as f:
-        img = f.read()
-
+        img = f.read(MAX_FIRMWARE_SIZE + 1)
+    
+    if len(img) > MAX_FIRMWARE_SIZE:
+        raise ValueError(f'Firmware file exceeds maximum size of {MAX_FIRMWARE_SIZE} bytes')
+    
+    if len(img) < 512:
+        raise ValueError('Firmware file too small to contain valid header')
+    
     # MD380 firmware header format (from md380_fw.py):
     # Header is 256 bytes, followed by encrypted app data
-    # The app length is stored at offset 240 (little endian uint32)
-    header_fmt = '<16s7s9s16s33s47sLL120s'
+    # Format: <16s7s9s16s33s47sLL120s
+    # - 16 bytes: magic ('OutSecurityBin')
+    # - 7 bytes: jst ('JST51')
+    # - 9 bytes: padding
+    # - 16 bytes: foo
+    # - 33 bytes: bar
+    # - 47 bytes: padding
+    # - 4 bytes: start address (L at offset 128)
+    # - 4 bytes: app_len (L at offset 132)
+    # - 120 bytes: padding
     
     # Parse header to get app length
-    # Using struct unpack to get the length field at position 240
-    app_len = struct.unpack('<L', img[240:244])[0]
+    app_len = struct.unpack('<L', img[132:136])[0]
+    
+    # Validate app_len is reasonable
+    if app_len > len(img) - 256:
+        raise ValueError(f'Invalid app_len {app_len} exceeds file size {len(img)}')
+    
+    if app_len == 0:
+        raise ValueError('Invalid app_len: firmware appears to be empty')
     
     # Extract encrypted app data (starts after 256-byte header)
     encrypted_app = img[256:256 + app_len]
