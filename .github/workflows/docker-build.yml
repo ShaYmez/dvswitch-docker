@@ -23,6 +23,8 @@ env:
 jobs:
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -44,8 +46,16 @@ jobs:
           # Start the container in the background
           docker run -d --name dvswitch-test dvswitch-server:test
           
-          # Wait for container to be ready
-          sleep 5
+          # Wait for container to be ready with retry logic
+          echo "=== Waiting for container to be ready ==="
+          for i in {1..10}; do
+            if docker exec dvswitch-test test -d /etc/dvswitch 2>/dev/null; then
+              echo "Container is ready after $i attempts"
+              break
+            fi
+            echo "Waiting for container... attempt $i/10"
+            sleep 2
+          done
           
           # Verify container is running
           echo "=== Checking container status ==="
@@ -56,25 +66,31 @@ jobs:
           docker exec dvswitch-test test -d /opt/MMDVM_Bridge && echo "✓ /opt/MMDVM_Bridge exists" || echo "✗ /opt/MMDVM_Bridge missing"
           docker exec dvswitch-test test -d /opt/Analog_Bridge && echo "✓ /opt/Analog_Bridge exists" || echo "✗ /opt/Analog_Bridge missing"
           
-          # Check if DVSwitch management utility exists
+          # Check if DVSwitch management utility exists and is executable
           echo "=== Checking DVSwitch management utility ==="
-          docker exec dvswitch-test test -x /usr/local/dvs/dvs && echo "✓ DVS management utility exists" || echo "✗ DVS management utility missing"
+          docker exec dvswitch-test test -x /usr/local/dvs/dvs && echo "✓ DVS management utility exists and is executable" || echo "✗ DVS management utility missing or not executable"
           
-          # Check for MMDVM_Bridge binary
+          # Check for MMDVM_Bridge binary (use -x to verify executable)
           echo "=== Checking MMDVM_Bridge binary ==="
-          docker exec dvswitch-test test -f /opt/MMDVM_Bridge/MMDVM_Bridge && echo "✓ MMDVM_Bridge binary exists" || echo "✗ MMDVM_Bridge binary missing"
+          docker exec dvswitch-test test -x /opt/MMDVM_Bridge/MMDVM_Bridge && echo "✓ MMDVM_Bridge binary exists and is executable" || echo "✗ MMDVM_Bridge binary missing or not executable"
           
-          # Check for Analog_Bridge binary
+          # Check for Analog_Bridge binary (use -x to verify executable)
           echo "=== Checking Analog_Bridge binary ==="
-          docker exec dvswitch-test test -f /opt/Analog_Bridge/Analog_Bridge && echo "✓ Analog_Bridge binary exists" || echo "✗ Analog_Bridge binary missing"
+          docker exec dvswitch-test test -x /opt/Analog_Bridge/Analog_Bridge && echo "✓ Analog_Bridge binary exists and is executable" || echo "✗ Analog_Bridge binary missing or not executable"
           
           # Check for md380-emu binary
           echo "=== Checking md380-emu binary ==="
-          docker exec dvswitch-test sh -c 'which md380-emu 2>/dev/null || find /opt -name "md380-emu" 2>/dev/null || find /usr -name "md380-emu" 2>/dev/null' && echo "✓ md380-emu found" || echo "Note: md380-emu not found (may not be included in dvswitch-server package)"
+          if docker exec dvswitch-test which md380-emu 2>/dev/null; then
+            echo "✓ md380-emu found in PATH"
+          elif docker exec dvswitch-test test -x /opt/md380-emu/md380-emu 2>/dev/null; then
+            echo "✓ md380-emu found at /opt/md380-emu/"
+          else
+            echo "Note: md380-emu not found (optional component, may not be included in dvswitch-server package)"
+          fi
           
-          # Check for dvswitch.sh script
+          # Check for dvswitch.sh script (use -x to verify executable)
           echo "=== Checking dvswitch.sh script ==="
-          docker exec dvswitch-test test -f /opt/MMDVM_Bridge/dvswitch.sh && echo "✓ dvswitch.sh exists" || echo "✗ dvswitch.sh missing"
+          docker exec dvswitch-test test -x /opt/MMDVM_Bridge/dvswitch.sh && echo "✓ dvswitch.sh exists and is executable" || echo "✗ dvswitch.sh missing or not executable"
           
           # List installed DVSwitch-related packages
           echo "=== Listing DVSwitch packages ==="
