@@ -51,8 +51,8 @@ EXPOSE 32001/udp
 # Dashboard web interface (if enabled)
 EXPOSE 80
 
-# Set working directory
-WORKDIR /opt/dvswitch
+# Set working directory to MMDVM_Bridge (main DVSwitch component)
+WORKDIR /opt/MMDVM_Bridge
 
 # Define volumes for persistent data
 VOLUME ["/etc/dvswitch", "/var/log/dvswitch"]
