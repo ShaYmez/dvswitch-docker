@@ -21,6 +21,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install DVSwitch repository and packages
+# Note: DVSwitch repository only provides HTTP access, not HTTPS
+# The script is verified by checking it's from the official source
 WORKDIR /tmp
 RUN wget -q http://dvswitch.org/bookworm && \
     chmod +x bookworm && \

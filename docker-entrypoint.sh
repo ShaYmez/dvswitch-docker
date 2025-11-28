@@ -23,20 +23,30 @@ fi
 case "$1" in
     dvswitch-server)
         echo "Starting DVSwitch Server..."
-        # Start the DVSwitch services
-        # The actual startup command depends on how DVSwitch is configured
-        # This is a placeholder - adjust based on actual DVSwitch service management
-        if command -v dvs &> /dev/null; then
+        
+        # Check if DVSwitch management utility is available
+        if [ -x "/usr/local/dvs/dvs" ]; then
             echo "DVSwitch management utility (dvs) is available"
-            echo "You can configure DVSwitch using: dvs"
+            echo "You can configure DVSwitch using: docker exec -it <container> /usr/local/dvs/dvs"
         fi
         
-        # Keep container running and tail logs
+        # Check for MMDVM_Bridge
+        if command -v MMDVM_Bridge &> /dev/null; then
+            echo "MMDVM_Bridge is available"
+        fi
+        
+        echo ""
         echo "Container is ready. DVSwitch services can be managed via dvs command."
-        echo "Use 'docker exec -it <container> /usr/local/dvs/dvs' to manage DVSwitch"
+        echo "Use 'docker exec -it <container> /bin/bash' to access the container shell."
+        echo ""
         
         # Keep the container running
-        tail -f /dev/null
+        # Using sleep in a loop is more graceful than tail -f /dev/null
+        # and allows for signal handling
+        while true; do
+            sleep 3600 &
+            wait $!
+        done
         ;;
     *)
         # Run any other command passed to the container

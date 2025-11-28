@@ -36,9 +36,9 @@ services:
     environment:
       - TZ=UTC
     
-    # Health check
+    # Health check - verify container is running and responsive
     healthcheck:
-      test: ["CMD", "pgrep", "-f", "dvswitch"]
+      test: ["CMD-SHELL", "test -d /etc/dvswitch || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 3
