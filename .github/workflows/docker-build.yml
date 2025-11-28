@@ -81,11 +81,19 @@ jobs:
           # Check for md380-emu binary
           echo "=== Checking md380-emu binary ==="
           if docker exec dvswitch-test which md380-emu 2>/dev/null; then
-            echo "✓ md380-emu found in PATH"
+            echo "✓ md380-emu found in PATH at: $(docker exec dvswitch-test which md380-emu)"
+            # Verify the binary can execute with qemu-user-static
+            if docker exec dvswitch-test md380-emu 2>&1 | head -3; then
+              echo "✓ md380-emu is executable"
+            else
+              echo "✗ md380-emu found but failed to execute"
+              exit 1
+            fi
           elif docker exec dvswitch-test test -x /opt/md380-emu/md380-emu 2>/dev/null; then
             echo "✓ md380-emu found at /opt/md380-emu/"
           else
-            echo "Note: md380-emu not found (optional component, may not be included in dvswitch-server package)"
+            echo "✗ md380-emu not found"
+            exit 1
           fi
           
           # Check for dvswitch.sh script (use -x to verify executable)
